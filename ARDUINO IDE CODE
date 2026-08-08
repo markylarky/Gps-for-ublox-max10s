@@ -1,0 +1,53 @@
+#include <TinyGPSPlus.h>
+#include <SoftwareSerial.h>
+
+// Choose two Arduino pins to use for software serial
+int RXPin = 4; // Connect to GPS TX
+int TXPin = 3; // Connect to GPS RX
+
+// Most u-blox modules default to 9600 baud. 
+// Note: Some newer SparkFun MAX-M10S boards default to 38400. 
+// If you get no data, try changing this to 38400.
+int GPSBaud = 9600;
+
+// Create a TinyGPSPlus object
+TinyGPSPlus gps;
+
+// Create a software serial port called "gpsSerial"
+SoftwareSerial gpsSerial(RXPin, TXPin);
+
+void setup() {
+  // Start the hardware serial port for the Serial Monitor
+  Serial.begin(115200);
+  
+  // Start the software serial port for the GPS
+  gpsSerial.begin(GPSBaud);
+  
+  Serial.println(F("Searching for satellites..."));
+}
+
+void loop() {
+  // This sketch displays information every time a new sentence is correctly encoded.
+  while (gpsSerial.available() > 0) {
+    if (gps.encode(gpsSerial.read())) {
+      displayInfo();
+    }
+  }
+
+  // If 5 seconds pass and no characters are received, check the wiring.
+  if (millis() > 5000 && gps.charsProcessed() < 10) {
+    Serial.println(F("No GPS data received: check wiring."));
+    while(true);
+  }
+}
+
+void displayInfo() {
+  if (gps.location.isValid()) {
+    Serial.print(F("Latitude: "));
+    Serial.print(gps.location.lat(), 6);
+    Serial.print(F(" | Longitude: "));
+    Serial.println(gps.location.lng(), 6);
+  } else {
+    Serial.println(F("Satellites found, but no location fix yet. Please wait..."));
+  }
+}
